@@ -1,0 +1,37 @@
+name: Auto Fetch & Deploy
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天 00:00 UTC (早上8点北京时闿)
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run fetch script
+        run: npm run fetch
+      
+      - name: Commit new content
+        run: |
+          git config user.name "ai-radar-bot"
+          git config user.email "bot@ai-radar.com"
+          git add content/posts/
+          git diff --cached --quiet || git commit -m "🤖 自动抓取: $(date +'%Y-%m-%d')"
+          git push
